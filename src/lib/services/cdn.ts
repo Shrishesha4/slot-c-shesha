@@ -1,4 +1,5 @@
 import { writable } from 'svelte/store';
+import { browser } from '$app/environment';
 
 export const edgeLocations = [
 	{ id: 'us-east', name: 'US East (N. Virginia)', latency: 35, status: 'active' },
@@ -85,75 +86,59 @@ const defaultMetrics = {
 	bandwidthSaved: 0
 };
 
+function loadContentItems() {
+	if (browser) {
+	  const storedItems = localStorage.getItem('cdnContentItems');
+	  if (storedItems) {
+		try {
+		  return JSON.parse(storedItems);
+		} catch (e) {
+		  console.error('Error parsing stored content items:', e);
+		}
+	  }
+	}
+	return [...defaultContentItems];
+  }
+
+  function saveContentItems() {
+	if (browser) {
+	  try {
+		localStorage.setItem('cdnContentItems', JSON.stringify(contentItems));
+	  } catch (e) {
+		console.error('Error saving content items to localStorage:', e);
+	  }
+	}
+  }
+  
+  function loadMetrics() {
+	if (browser) {
+	  const storedMetrics = localStorage.getItem('cdnMetrics');
+	  if (storedMetrics) {
+		try {
+		  return JSON.parse(storedMetrics);
+		} catch (e) {
+		  console.error('Error parsing stored metrics:', e);
+		}
+	  }
+	}
+	return { ...defaultMetrics };
+  }
+  
 // Store for CDN metrics
 export const cdnMetrics = writable({ ...defaultMetrics });
 
-// Simulate a content request
-// export function requestContent(contentId: number, locationId: string) {
-// 	const content = contentItems.find((item) => item.id === contentId);
-// 	const location = edgeLocations.find((loc) => loc.id === locationId);
-	
-// 	if (!content || !location) return null;
-	
-// 	const isCached = content.locations.includes(locationId);
-// 	const metrics = getCdnMetrics();
-	
-// 	// Update metrics
-// 	if (metrics) {
-// 		(metrics as { totalRequests: number }).totalRequests += 1;
-// 	}
-	
-//     if (!metrics) return;
+// Save metrics to localStorage whenever they change
+cdnMetrics.subscribe(metrics => {
+	if (browser) {
+	  try {
+		localStorage.setItem('cdnMetrics', JSON.stringify(metrics));
+	  } catch (e) {
+		console.error('Error saving metrics to localStorage:', e);
+	  }
+	}
+  });
 
-//     if (isCached) {
-//         (metrics as { cacheHits: number }).cacheHits += 1;
-//         // Calculate bandwidth saved based on content size
-//         const sizeInMB = content.size.includes('MB') 
-//             ? parseFloat(content.size.replace('MB', ''))
-//             : parseFloat(content.size.replace('KB', '')) / 1000;
-        
-//         if (!isNaN(sizeInMB)) {
-//             (metrics as { bandwidthSaved: number }).bandwidthSaved += sizeInMB;
-//         }
-//     } else {
-//         (metrics as { cacheMisses: number }).cacheMisses += 1;
-//     }
-    
-//     // Calculate new latency with realistic variation
-//     const baseLatency = location.latency;
-    
-//     // Add realistic latency variation based on several factors
-//     const timeOfDayFactor = getTimeOfDayFactor();
-//     const networkCongestionFactor = Math.random() * 0.3 + 0.85; // 0.85-1.15 random factor
-//     const contentTypeFactor = getContentTypeFactor(content.type);
-//     const distanceFactor = getDistanceVariationFactor(locationId);
-    
-//     // Apply all factors to create realistic variation
-//     const variableBaseLatency = Math.round(
-//         baseLatency * timeOfDayFactor * networkCongestionFactor * distanceFactor
-//     );
-    
-//     // Cached content is faster, uncached needs to fetch from origin
-//     const contentLatency = isCached 
-//         ? variableBaseLatency 
-//         : Math.round(variableBaseLatency * (2.5 + Math.random())); // 2.5-3.5x slower for uncached
-    
-//     if ((metrics as { totalRequests: number }).totalRequests > 0) {
-//         (metrics as { avgLatency: number }).avgLatency = (
-//             ((metrics as { avgLatency: number }).avgLatency * ((metrics as { totalRequests: number }).totalRequests - 1)) + contentLatency
-//         ) / (metrics as { totalRequests: number }).totalRequests;
-//     }
-    
-//     cdnMetrics.set(metrics);
-// 	return {
-// 		content,
-// 		location,
-// 		latency: contentLatency,
-// 		cached: isCached
-// 	};
-// }
 
-// Helper function to simulate time-of-day effects on latency
 function getTimeOfDayFactor() {
     const hour = new Date().getHours();
     
@@ -209,6 +194,7 @@ export function cacheContent(contentId: number, locationId: string) {
 	
 	if (!contentItems[contentIndex].locations.includes(locationId)) {
 		contentItems[contentIndex].locations.push(locationId);
+		saveContentItems(); // Save after modification
 		return true;
 	}
 	
@@ -222,6 +208,7 @@ export function resetCdnData() {
 	
 	// Reset content items to default state
 	contentItems = [...defaultContentItems];
+	saveContentItems();
 	
 	return true;
 }
@@ -271,6 +258,7 @@ export function updateContentPopularity() {
   contentItems.forEach(item => {
     item.accessCount = 0;
   });
+  saveContentItems();
 }
 
 // Auto-cache popular content at edge locations
@@ -289,7 +277,7 @@ export function autoCachePopularContent() {
       const uncachedLocations = edgeLocations
         .filter(loc => !item.locations.includes(loc.id))
         .map(loc => loc.id);
-      
+
       // Randomly select locations to cache at
       while (item.locations.length < targetCacheCount && uncachedLocations.length > 0) {
         const randomIndex = Math.floor(Math.random() * uncachedLocations.length);
@@ -298,6 +286,7 @@ export function autoCachePopularContent() {
       }
     }
   });
+  saveContentItems();
 }
 
 // Simulate content version updates
@@ -320,7 +309,7 @@ export function simulateContentVersionUpdate() {
   
   // Reset cache locations (new version needs to be re-cached)
   item.locations = [];
-  
+  saveContentItems();
   return item;
 }
 
@@ -342,10 +331,9 @@ export function requestContent(contentId: number, locationId: string) {
   }
   
       if (!metrics) return;
-  
+
       if (isCached) {
           (metrics as { cacheHits: number }).cacheHits += 1;
-          // Calculate bandwidth saved based on content size
           const sizeInMB = content.size.includes('MB') 
               ? parseFloat(content.size.replace('MB', ''))
               : parseFloat(content.size.replace('KB', '')) / 1000;
@@ -481,7 +469,7 @@ export function addNewContent() {
   
   // Add to content library
   contentItems.push(newContent as any);
-  
+  saveContentItems();
   // If library gets too big, implement content pruning
   if (contentItems.length > 100) {
     pruneContentLibrary();
@@ -498,7 +486,7 @@ function pruneContentLibrary() {
     const bDate = b.lastUpdated ? new Date(b.lastUpdated).getTime() : 0;
     return aDate - bDate;
   });
-  
+  saveContentItems();
   while (contentItems.length > 80) { // Keep around 80 items
     contentItems.shift(); // Remove the first (least popular/oldest) item
   }

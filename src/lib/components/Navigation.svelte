@@ -2,7 +2,6 @@
 	import { page } from '$app/stores';
 	import { resetCdnData } from '$lib/services/cdn';
 	
-	// Define navigation items
 	const navItems = [
 		{ path: '/', label: 'Dashboard' },
 		{ path: '/content', label: 'Content Library' },
@@ -10,7 +9,6 @@
 		{ path: '/analytics', label: 'Analytics' }
 	];
 	
-	// Check if a path is active
 	function isActive(path: string) {
 		if (path === '/') {
 			return $page.url.pathname === '/';
@@ -18,10 +16,12 @@
 		return $page.url.pathname.startsWith(path);
 	}
 	
-	// Handle reset button click
 	function handleReset() {
 		if (confirm('Are you sure you want to reset all CDN data to defaults?')) {
 			resetCdnData();
+			// Also clear localStorage when explicitly resetting
+			localStorage.removeItem('cdnContentItems');
+			localStorage.removeItem('cdnMetrics');
 			alert('CDN data has been reset to defaults.');
 		}
 	}
@@ -32,7 +32,7 @@
 		<div class="flex justify-between h-16">
 			<div class="flex">
 				<div class="flex-shrink-0 flex items-center">
-					<span class="text-blue-600 font-bold text-xl">Cloud CDN Demo</span>
+					<span class="text-blue-600 font-bold text-xl">CDN Dash</span>
 				</div>
 				
 				<div class="hidden sm:ml-6 sm:flex sm:space-x-8">
