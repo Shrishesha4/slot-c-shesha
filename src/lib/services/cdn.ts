@@ -1,6 +1,5 @@
 import { writable } from 'svelte/store';
 
-// Simulated edge locations around the world
 export const edgeLocations = [
 	{ id: 'us-east', name: 'US East (N. Virginia)', latency: 35, status: 'active' },
 	{ id: 'us-west', name: 'US West (Oregon)', latency: 75, status: 'active' },
@@ -10,7 +9,7 @@ export const edgeLocations = [
 	{ id: 'sa-east', name: 'South America (São Paulo)', latency: 140, status: 'active' }
 ];
 
-// Simulated content types
+
 export const contentTypes = [
 	{ id: 'image', name: 'Images', avgSize: '2MB', cacheTime: '7 days' },
 	{ id: 'video', name: 'Videos', avgSize: '50MB', cacheTime: '3 days' },
@@ -26,7 +25,11 @@ const defaultContentItems = [
 		name: 'hero-banner.jpg',
 		size: '1.8MB',
 		cached: true,
-		locations: ['us-east', 'us-west', 'eu-west']
+		locations: ['us-east', 'us-west', 'eu-west'],
+		popularity: 85,
+		version: '1.0',
+		lastUpdated: new Date().toISOString(),
+		accessCount: 0
 	},
 	{
 		id: 2,
@@ -34,7 +37,11 @@ const defaultContentItems = [
 		name: 'product-demo.mp4',
 		size: '45MB',
 		cached: true,
-		locations: ['us-east', 'ap-south']
+		locations: ['us-east', 'ap-south'],
+		popularity: 85,
+		version: '1.0',
+		lastUpdated: new Date().toISOString(),
+		accessCount: 0
 	},
 	{
 		id: 3,
@@ -42,7 +49,11 @@ const defaultContentItems = [
 		name: 'main.js',
 		size: '320KB',
 		cached: true,
-		locations: ['us-east', 'us-west', 'eu-west', 'ap-south', 'ap-northeast', 'sa-east']
+		locations: ['us-east', 'us-west', 'eu-west', 'ap-south', 'ap-northeast', 'sa-east'],
+		popularity: 85,
+		version: '1.0',
+		lastUpdated: new Date().toISOString(),
+		accessCount: 0
 	},
 	{
 		id: 4,
@@ -50,7 +61,11 @@ const defaultContentItems = [
 		name: 'user-data.json',
 		size: '8KB',
 		cached: false,
-		locations: ['us-east']
+		locations: ['us-east'],
+		popularity: 85,
+		version: '1.0',
+		lastUpdated: new Date().toISOString(),
+		accessCount: 0
 	}
 ];
 
@@ -70,69 +85,69 @@ const defaultMetrics = {
 export const cdnMetrics = writable({ ...defaultMetrics });
 
 // Simulate a content request
-export function requestContent(contentId: number, locationId: string) {
-	const content = contentItems.find((item) => item.id === contentId);
-	const location = edgeLocations.find((loc) => loc.id === locationId);
+// export function requestContent(contentId: number, locationId: string) {
+// 	const content = contentItems.find((item) => item.id === contentId);
+// 	const location = edgeLocations.find((loc) => loc.id === locationId);
 	
-	if (!content || !location) return null;
+// 	if (!content || !location) return null;
 	
-	const isCached = content.locations.includes(locationId);
-	const metrics = getCdnMetrics();
+// 	const isCached = content.locations.includes(locationId);
+// 	const metrics = getCdnMetrics();
 	
-	// Update metrics
-	if (metrics) {
-		(metrics as { totalRequests: number }).totalRequests += 1;
-	}
+// 	// Update metrics
+// 	if (metrics) {
+// 		(metrics as { totalRequests: number }).totalRequests += 1;
+// 	}
 	
-    if (!metrics) return;
+//     if (!metrics) return;
 
-    if (isCached) {
-        (metrics as { cacheHits: number }).cacheHits += 1;
-        // Calculate bandwidth saved based on content size
-        const sizeInMB = content.size.includes('MB') 
-            ? parseFloat(content.size.replace('MB', ''))
-            : parseFloat(content.size.replace('KB', '')) / 1000;
+//     if (isCached) {
+//         (metrics as { cacheHits: number }).cacheHits += 1;
+//         // Calculate bandwidth saved based on content size
+//         const sizeInMB = content.size.includes('MB') 
+//             ? parseFloat(content.size.replace('MB', ''))
+//             : parseFloat(content.size.replace('KB', '')) / 1000;
         
-        if (!isNaN(sizeInMB)) {
-            (metrics as { bandwidthSaved: number }).bandwidthSaved += sizeInMB;
-        }
-    } else {
-        (metrics as { cacheMisses: number }).cacheMisses += 1;
-    }
+//         if (!isNaN(sizeInMB)) {
+//             (metrics as { bandwidthSaved: number }).bandwidthSaved += sizeInMB;
+//         }
+//     } else {
+//         (metrics as { cacheMisses: number }).cacheMisses += 1;
+//     }
     
-    // Calculate new latency with realistic variation
-    const baseLatency = location.latency;
+//     // Calculate new latency with realistic variation
+//     const baseLatency = location.latency;
     
-    // Add realistic latency variation based on several factors
-    const timeOfDayFactor = getTimeOfDayFactor();
-    const networkCongestionFactor = Math.random() * 0.3 + 0.85; // 0.85-1.15 random factor
-    const contentTypeFactor = getContentTypeFactor(content.type);
-    const distanceFactor = getDistanceVariationFactor(locationId);
+//     // Add realistic latency variation based on several factors
+//     const timeOfDayFactor = getTimeOfDayFactor();
+//     const networkCongestionFactor = Math.random() * 0.3 + 0.85; // 0.85-1.15 random factor
+//     const contentTypeFactor = getContentTypeFactor(content.type);
+//     const distanceFactor = getDistanceVariationFactor(locationId);
     
-    // Apply all factors to create realistic variation
-    const variableBaseLatency = Math.round(
-        baseLatency * timeOfDayFactor * networkCongestionFactor * distanceFactor
-    );
+//     // Apply all factors to create realistic variation
+//     const variableBaseLatency = Math.round(
+//         baseLatency * timeOfDayFactor * networkCongestionFactor * distanceFactor
+//     );
     
-    // Cached content is faster, uncached needs to fetch from origin
-    const contentLatency = isCached 
-        ? variableBaseLatency 
-        : Math.round(variableBaseLatency * (2.5 + Math.random())); // 2.5-3.5x slower for uncached
+//     // Cached content is faster, uncached needs to fetch from origin
+//     const contentLatency = isCached 
+//         ? variableBaseLatency 
+//         : Math.round(variableBaseLatency * (2.5 + Math.random())); // 2.5-3.5x slower for uncached
     
-    if ((metrics as { totalRequests: number }).totalRequests > 0) {
-        (metrics as { avgLatency: number }).avgLatency = (
-            ((metrics as { avgLatency: number }).avgLatency * ((metrics as { totalRequests: number }).totalRequests - 1)) + contentLatency
-        ) / (metrics as { totalRequests: number }).totalRequests;
-    }
+//     if ((metrics as { totalRequests: number }).totalRequests > 0) {
+//         (metrics as { avgLatency: number }).avgLatency = (
+//             ((metrics as { avgLatency: number }).avgLatency * ((metrics as { totalRequests: number }).totalRequests - 1)) + contentLatency
+//         ) / (metrics as { totalRequests: number }).totalRequests;
+//     }
     
-    cdnMetrics.set(metrics);
-	return {
-		content,
-		location,
-		latency: contentLatency,
-		cached: isCached
-	};
-}
+//     cdnMetrics.set(metrics);
+// 	return {
+// 		content,
+// 		location,
+// 		latency: contentLatency,
+// 		cached: isCached
+// 	};
+// }
 
 // Helper function to simulate time-of-day effects on latency
 function getTimeOfDayFactor() {
@@ -205,4 +220,168 @@ export function resetCdnData() {
 	contentItems = [...defaultContentItems];
 	
 	return true;
+}
+
+// Add these properties to content items
+// Update the content item interface to include all the properties you're using
+export interface ContentItem {
+  id: number;
+  name: string;
+  type: string;
+  size: string;
+  locations: string[];
+  popularity?: number;  // Make optional with default value
+  version?: string;     // Make optional with default value
+  lastUpdated?: string; // Make optional
+  accessCount?: number; // Make optional for tracking
+  cached?: boolean;     // Make optional for compatibility
+}
+
+// Update content popularity based on access patterns
+export function updateContentPopularity() {
+  // Find the most accessed content
+  const sortedContent = [...contentItems].sort((a, b) => 
+    (b.accessCount || 0) - (a.accessCount || 0)
+  );
+  
+  // Update popularity scores
+  sortedContent.forEach((item, index) => {
+    // Top 20% get high popularity
+    if (index < contentItems.length * 0.2) {
+      item.popularity = Math.min(100, item.popularity + Math.floor(Math.random() * 3) + 1);
+    } 
+    // Middle 60% get moderate changes
+    else if (index < contentItems.length * 0.8) {
+      item.popularity = Math.min(100, Math.max(1, 
+        item.popularity + (Math.random() > 0.5 ? 1 : -1) * Math.floor(Math.random() * 2)
+      ));
+    }
+    // Bottom 20% decrease in popularity
+    else {
+      item.popularity = Math.max(1, item.popularity - Math.floor(Math.random() * 2));
+    }
+  });
+  
+  // Reset access counts for next cycle
+  contentItems.forEach(item => {
+    item.accessCount = 0;
+  });
+}
+
+// Auto-cache popular content at edge locations
+export function autoCachePopularContent() {
+  // Get highly popular content (popularity > 70)
+  const popularContent = contentItems.filter(item => item.popularity > 70);
+  
+  // For each popular item, ensure it's cached at more edge locations
+  popularContent.forEach(item => {
+    // Calculate how many locations it should be cached at based on popularity
+    const targetCacheCount = Math.ceil((item.popularity / 100) * edgeLocations.length);
+    
+    // If it's not cached at enough locations, add more
+    if (item.locations.length < targetCacheCount) {
+      // Find locations where it's not cached
+      const uncachedLocations = edgeLocations
+        .filter(loc => !item.locations.includes(loc.id))
+        .map(loc => loc.id);
+      
+      // Randomly select locations to cache at
+      while (item.locations.length < targetCacheCount && uncachedLocations.length > 0) {
+        const randomIndex = Math.floor(Math.random() * uncachedLocations.length);
+        const locationId = uncachedLocations.splice(randomIndex, 1)[0];
+        item.locations.push(locationId);
+      }
+    }
+  });
+}
+
+// Simulate content version updates
+export function simulateContentVersionUpdate() {
+  // Randomly select a content item to update
+  const randomIndex = Math.floor(Math.random() * contentItems.length);
+  const item = contentItems[randomIndex];
+  
+  // Update version
+  item.version = (parseFloat(item.version || "1.0") + 0.1).toFixed(1);
+  
+  // Update size slightly (content changes)
+  const currentSize = parseFloat(item.size.replace(/[^0-9.]/g, ''));
+  const unit = item.size.includes('MB') ? 'MB' : 'KB';
+  const newSize = (currentSize * (0.95 + Math.random() * 0.1)).toFixed(1);
+  item.size = `${newSize}${unit}`;
+  
+  // Add last updated timestamp
+  item.lastUpdated = new Date().toISOString();
+  
+  // Reset cache locations (new version needs to be re-cached)
+  item.locations = [];
+  
+  return item;
+}
+
+export function requestContent(contentId: number, locationId: string) {
+  const content = contentItems.find((item) => item.id === contentId);
+  const location = edgeLocations.find((loc) => loc.id === locationId);
+  
+  if (!content || !location) return null;
+  
+  // Track access count for popularity calculations
+  content.accessCount = (content.accessCount || 0) + 1;
+  
+  const isCached = content.locations.includes(locationId);
+  const metrics = getCdnMetrics();
+  
+  // Update metrics
+  if (metrics) {
+      (metrics as { totalRequests: number }).totalRequests += 1;
+  }
+  
+      if (!metrics) return;
+  
+      if (isCached) {
+          (metrics as { cacheHits: number }).cacheHits += 1;
+          // Calculate bandwidth saved based on content size
+          const sizeInMB = content.size.includes('MB') 
+              ? parseFloat(content.size.replace('MB', ''))
+              : parseFloat(content.size.replace('KB', '')) / 1000;
+          
+          if (!isNaN(sizeInMB)) {
+              (metrics as { bandwidthSaved: number }).bandwidthSaved += sizeInMB;
+          }
+      } else {
+          (metrics as { cacheMisses: number }).cacheMisses += 1;
+      }
+      
+      // Calculate new latency with realistic variation
+      const baseLatency = location.latency;
+      
+      // Add realistic latency variation based on several factors
+      const timeOfDayFactor = getTimeOfDayFactor();
+      const networkCongestionFactor = Math.random() * 0.3 + 0.85; // 0.85-1.15 random factor
+      const contentTypeFactor = getContentTypeFactor(content.type);
+      const distanceFactor = getDistanceVariationFactor(locationId);
+      
+      // Apply all factors to create realistic variation
+      const variableBaseLatency = Math.round(
+          baseLatency * timeOfDayFactor * networkCongestionFactor * distanceFactor
+      );
+      
+      // Cached content is faster, uncached needs to fetch from origin
+      const contentLatency = isCached 
+          ? variableBaseLatency 
+          : Math.round(variableBaseLatency * (2.5 + Math.random())); // 2.5-3.5x slower for uncached
+      
+      if ((metrics as { totalRequests: number }).totalRequests > 0) {
+          (metrics as { avgLatency: number }).avgLatency = (
+              ((metrics as { avgLatency: number }).avgLatency * ((metrics as { totalRequests: number }).totalRequests - 1)) + contentLatency
+          ) / (metrics as { totalRequests: number }).totalRequests;
+      }
+      
+      cdnMetrics.set(metrics);
+  return {
+      content,
+      location,
+      latency: contentLatency,
+      cached: isCached
+  };
 }

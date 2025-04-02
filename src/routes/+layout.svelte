@@ -2,7 +2,7 @@
 	import '../app.css';
 	import Navigation from '$lib/components/Navigation.svelte';
 	import { onMount } from 'svelte';
-	import { edgeLocations, contentItems, requestContent, cdnMetrics } from '$lib/services/cdn';
+	import { edgeLocations, contentItems, requestContent, cdnMetrics, autoCachePopularContent, simulateContentVersionUpdate, updateContentPopularity } from '$lib/services/cdn';
 
 	let { children } = $props();
 	let serviceWorkerRegistration: ServiceWorkerRegistration | null = null;
@@ -91,6 +91,39 @@
 								const randomContent = contentItems[contentIndex];
 								const randomLocation = selectWeightedLocation();
 								requestContent(randomContent.id, randomLocation);
+							}
+						} else if (event.data && event.data.type === 'UPDATE_CONTENT_POPULARITY') {
+							// Update content popularity based on access patterns
+							updateContentPopularity();
+							
+							// Send updated content library to service worker
+							if (serviceWorkerRegistration) {
+								serviceWorkerRegistration.active?.postMessage({
+									type: 'STORE_CONTENT_LIBRARY',
+									contentItems
+								});
+							}
+						} else if (event.data && event.data.type === 'AUTO_CACHE_POPULAR_CONTENT') {
+							// Auto-cache popular content at edge locations
+							autoCachePopularContent();
+							
+							// Send updated content library to service worker
+							if (serviceWorkerRegistration) {
+								serviceWorkerRegistration.active?.postMessage({
+									type: 'STORE_CONTENT_LIBRARY',
+									contentItems
+								});
+							}
+						} else if (event.data && event.data.type === 'CONTENT_VERSION_UPDATE') {
+							// Simulate content version update
+							const updatedItem = simulateContentVersionUpdate();
+							
+							// Send updated content library to service worker
+							if (serviceWorkerRegistration) {
+								serviceWorkerRegistration.active?.postMessage({
+									type: 'STORE_CONTENT_LIBRARY',
+									contentItems
+								});
 							}
 						}
 					});

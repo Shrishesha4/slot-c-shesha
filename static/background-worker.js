@@ -34,6 +34,39 @@ self.addEventListener('activate', event => {
       }
     });
   }, 15000); // Every 15 seconds instead of every minute
+  
+  // Set up content library reactivity - simulate content changes
+  setInterval(() => {
+    self.clients.matchAll().then(clients => {
+      if (clients.length > 0) {
+        // Randomly decide what type of content update to perform
+        const updateType = Math.random();
+        
+        if (updateType < 0.3) {
+          // 30% chance: Update content popularity
+          clients.forEach(client => {
+            client.postMessage({
+              type: 'UPDATE_CONTENT_POPULARITY'
+            });
+          });
+        } else if (updateType < 0.5) {
+          // 20% chance: Auto-cache popular content
+          clients.forEach(client => {
+            client.postMessage({
+              type: 'AUTO_CACHE_POPULAR_CONTENT'
+            });
+          });
+        } else if (updateType < 0.6) {
+          // 10% chance: Simulate content update (version change)
+          clients.forEach(client => {
+            client.postMessage({
+              type: 'CONTENT_VERSION_UPDATE'
+            });
+          });
+        }
+      }
+    });
+  }, 45000); // Every 45 seconds
 });
 
 // Function to perform background simulation when no clients are connected
@@ -73,10 +106,53 @@ function performBackgroundSimulation() {
           // Store updated metrics
           localStorage.setItem('cdnMetrics', JSON.stringify(metrics));
         }
+        
+        // Also simulate content library changes in background
+        const contentLibrary = localStorage.getItem('contentLibrary');
+        if (contentLibrary) {
+          const content = JSON.parse(contentLibrary);
+          simulateContentChanges(content);
+          localStorage.setItem('contentLibrary', JSON.stringify(content));
+        }
       } catch (e) {
         console.error('Error in background simulation:', e);
       }
     });
+}
+
+// Function to simulate content library changes
+function simulateContentChanges(contentItems) {
+  if (!contentItems || !contentItems.length) return;
+  
+  // Randomly select a few content items to modify
+  const numToModify = Math.floor(Math.random() * 3) + 1; // 1-3 items
+  
+  for (let i = 0; i < numToModify; i++) {
+    const randomIndex = Math.floor(Math.random() * contentItems.length);
+    const item = contentItems[randomIndex];
+    
+    // Randomly decide what to change
+    const changeType = Math.random();
+    
+    if (changeType < 0.4) {
+      // 40% chance: Update popularity score
+      item.popularity = Math.min(100, Math.max(1, 
+        item.popularity + (Math.random() > 0.5 ? 1 : -1) * (Math.floor(Math.random() * 5) + 1)
+      ));
+    } else if (changeType < 0.7) {
+      // 30% chance: Update version
+      item.version = (parseFloat(item.version || "1.0") + 0.1).toFixed(1);
+    } else if (changeType < 0.9) {
+      // 20% chance: Update size slightly
+      const currentSize = parseFloat(item.size.replace(/[^0-9.]/g, ''));
+      const unit = item.size.includes('MB') ? 'MB' : 'KB';
+      const newSize = (currentSize * (0.95 + Math.random() * 0.1)).toFixed(1);
+      item.size = `${newSize}${unit}`;
+    }
+    
+    // Add last updated timestamp
+    item.lastUpdated = new Date().toISOString();
+  }
 }
 
 self.addEventListener('periodicsync', event => {
@@ -110,6 +186,15 @@ self.addEventListener('message', event => {
           console.error('Error storing metrics in worker:', e);
         }
       }
+    } else if (event.data.type === 'STORE_CONTENT_LIBRARY') {
+      // Store content library data received from the main thread
+      if (event.data.contentItems) {
+        try {
+          localStorage.setItem('contentLibrary', JSON.stringify(event.data.contentItems));
+        } catch (e) {
+          console.error('Error storing content library in worker:', e);
+        }
+      }
     }
   }
 });
@@ -121,6 +206,17 @@ self.addEventListener('fetch', event => {
     event.respondWith(
       new Response(
         localStorage.getItem('cdnMetrics') || '{"totalRequests":0,"cacheHits":0,"cacheMisses":0,"avgLatency":0,"bandwidthSaved":0}',
+        { headers: { 'Content-Type': 'application/json' } }
+      )
+    );
+    return;
+  }
+  
+  // Check if this is a request for our content library API
+  if (event.request.url.includes('/api/content-library')) {
+    event.respondWith(
+      new Response(
+        localStorage.getItem('contentLibrary') || '[]',
         { headers: { 'Content-Type': 'application/json' } }
       )
     );
