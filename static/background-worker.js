@@ -63,6 +63,13 @@ self.addEventListener('activate', event => {
               type: 'CONTENT_VERSION_UPDATE'
             });
           });
+        } else if (updateType < 0.8) {
+          // 20% chance: Add new content (simulate user upload)
+          clients.forEach(client => {
+            client.postMessage({
+              type: 'ADD_NEW_CONTENT'
+            });
+          });
         }
       }
     });

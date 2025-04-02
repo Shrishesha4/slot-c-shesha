@@ -2,7 +2,16 @@
 	import '../app.css';
 	import Navigation from '$lib/components/Navigation.svelte';
 	import { onMount } from 'svelte';
-	import { edgeLocations, contentItems, requestContent, cdnMetrics, autoCachePopularContent, simulateContentVersionUpdate, updateContentPopularity } from '$lib/services/cdn';
+	import { 
+		edgeLocations, 
+		contentItems, 
+		requestContent, 
+		cdnMetrics, 
+		updateContentPopularity, 
+		autoCachePopularContent, 
+		simulateContentVersionUpdate,
+		addNewContent 
+	} from '$lib/services/cdn';
 
 	let { children } = $props();
 	let serviceWorkerRegistration: ServiceWorkerRegistration | null = null;
@@ -117,6 +126,18 @@
 						} else if (event.data && event.data.type === 'CONTENT_VERSION_UPDATE') {
 							// Simulate content version update
 							const updatedItem = simulateContentVersionUpdate();
+							
+							// Send updated content library to service worker
+							if (serviceWorkerRegistration) {
+								serviceWorkerRegistration.active?.postMessage({
+									type: 'STORE_CONTENT_LIBRARY',
+									contentItems
+								});
+							}
+						} else if (event.data && event.data.type === 'ADD_NEW_CONTENT') {
+							// Simulate new content being added (user upload)
+							const newContent = addNewContent();
+							console.log('New content added to library:', newContent.name);
 							
 							// Send updated content library to service worker
 							if (serviceWorkerRegistration) {

@@ -29,6 +29,7 @@ const defaultContentItems = [
 		popularity: 85,
 		version: '1.0',
 		lastUpdated: new Date().toISOString(),
+		uploadDate: new Date().toISOString(),
 		accessCount: 0
 	},
 	{
@@ -41,6 +42,7 @@ const defaultContentItems = [
 		popularity: 85,
 		version: '1.0',
 		lastUpdated: new Date().toISOString(),
+		uploadDate: new Date().toISOString(),
 		accessCount: 0
 	},
 	{
@@ -53,6 +55,7 @@ const defaultContentItems = [
 		popularity: 85,
 		version: '1.0',
 		lastUpdated: new Date().toISOString(),
+		uploadDate: new Date().toISOString(),
 		accessCount: 0
 	},
 	{
@@ -65,6 +68,7 @@ const defaultContentItems = [
 		popularity: 85,
 		version: '1.0',
 		lastUpdated: new Date().toISOString(),
+		uploadDate: new Date().toISOString(),
 		accessCount: 0
 	}
 ];
@@ -230,11 +234,12 @@ export interface ContentItem {
   type: string;
   size: string;
   locations: string[];
+  cached: boolean;     // Changed from optional to required
   popularity?: number;  // Make optional with default value
   version?: string;     // Make optional with default value
   lastUpdated?: string; // Make optional
   accessCount?: number; // Make optional for tracking
-  cached?: boolean;     // Make optional for compatibility
+  uploadDate?: string;  // When the content was added to the library
 }
 
 // Update content popularity based on access patterns
@@ -384,4 +389,117 @@ export function requestContent(contentId: number, locationId: string) {
       latency: contentLatency,
       cached: isCached
   };
+}
+
+// Generate a realistic file name based on content type
+function generateFileName(type: string): string {
+  const timestamp = Date.now().toString().slice(-6);
+  
+  switch(type) {
+    case 'image':
+      const imageNames = ['product', 'banner', 'hero', 'profile', 'thumbnail', 'gallery', 'promo'];
+      const imageFormats = ['jpg', 'png', 'webp'];
+      return `${imageNames[Math.floor(Math.random() * imageNames.length)]}-${timestamp}.${imageFormats[Math.floor(Math.random() * imageFormats.length)]}`;
+    
+    case 'video':
+      const videoNames = ['intro', 'tutorial', 'promo', 'demo', 'testimonial', 'background'];
+      return `${videoNames[Math.floor(Math.random() * videoNames.length)]}-${timestamp}.mp4`;
+    
+    case 'static':
+      const staticTypes = ['main', 'vendor', 'app', 'bundle', 'styles', 'framework'];
+      const staticExts = ['js', 'css', 'svg', 'woff2'];
+      return `${staticTypes[Math.floor(Math.random() * staticTypes.length)]}.${staticExts[Math.floor(Math.random() * staticExts.length)]}`;
+    
+    case 'api':
+      const apiTypes = ['user', 'product', 'cart', 'settings', 'analytics', 'data'];
+      return `${apiTypes[Math.floor(Math.random() * apiTypes.length)]}-${timestamp}.json`;
+    
+    default:
+      return `file-${timestamp}.bin`;
+  }
+}
+
+// Generate realistic file size based on content type
+function generateFileSize(type: string): string {
+  switch(type) {
+    case 'image':
+      // Images typically 100KB to 3MB
+      return `${(Math.random() * 2.9 + 0.1).toFixed(1)}MB`;
+    
+    case 'video':
+      // Videos typically 5MB to 100MB
+      return `${Math.floor(Math.random() * 95 + 5)}MB`;
+    
+    case 'static':
+      // Static assets typically 10KB to 500KB
+      return `${Math.floor(Math.random() * 490 + 10)}KB`;
+    
+    case 'api':
+      // API responses typically 1KB to 50KB
+      return `${Math.floor(Math.random() * 49 + 1)}KB`;
+    
+    default:
+      return `${Math.floor(Math.random() * 100 + 1)}KB`;
+  }
+}
+
+// Add new content to the library (simulating user uploads)
+// In the addNewContent function, ensure cached property is set
+export function addNewContent() {
+  // Determine content type with weighted distribution
+  // (more static and image files than video files in typical CDN)
+  const typeRandom = Math.random();
+  let contentType: string;
+  
+  if (typeRandom < 0.35) {
+    contentType = 'static';
+  } else if (typeRandom < 0.7) {
+    contentType = 'image';
+  } else if (typeRandom < 0.9) {
+    contentType = 'video';
+  } else {
+    contentType = 'api';
+  }
+  
+  // Generate a new ID (max of existing IDs + 1)
+  const newId = Math.max(...contentItems.map(item => item.id)) + 1;
+  
+  // Create the new content item
+  const newContent: ContentItem = {
+    id: newId,
+    type: contentType,
+    name: generateFileName(contentType),
+    size: generateFileSize(contentType),
+    locations: [], // Initially not cached anywhere
+    cached: false, // Explicitly set cached to false for new content
+    popularity: Math.floor(Math.random() * 30) + 1, // Initial popularity 1-30
+    version: '1.0',
+    lastUpdated: new Date().toISOString(),
+    uploadDate: new Date().toISOString(),
+    accessCount: 0
+  };
+  
+  // Add to content library
+  contentItems.push(newContent as any);
+  
+  // If library gets too big, implement content pruning
+  if (contentItems.length > 100) {
+    pruneContentLibrary();
+  }
+  
+  return newContent;
+}
+function pruneContentLibrary() {
+  contentItems.sort((a, b) => {
+    const popularityDiff = (a.popularity || 0) - (b.popularity || 0);
+    if (popularityDiff !== 0) return popularityDiff;
+    
+    const aDate = a.lastUpdated ? new Date(a.lastUpdated).getTime() : 0;
+    const bDate = b.lastUpdated ? new Date(b.lastUpdated).getTime() : 0;
+    return aDate - bDate;
+  });
+  
+  while (contentItems.length > 80) { // Keep around 80 items
+    contentItems.shift(); // Remove the first (least popular/oldest) item
+  }
 }

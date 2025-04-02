@@ -1,6 +1,38 @@
 <script lang="ts">
   import { contentItems, contentTypes, edgeLocations } from '$lib/services/cdn';
   
+  // Sorting options
+  let sortBy = 'newest'; // Default sort by newest
+  let filteredItems = [...contentItems];
+  
+  // Apply sorting and filtering
+  $: {
+    filteredItems = [...contentItems];
+    
+    // Apply sorting
+    if (sortBy === 'newest') {
+      filteredItems.sort((a, b) => {
+        const dateA = a.uploadDate ? new Date(a.uploadDate).getTime() : 0;
+        const dateB = b.uploadDate ? new Date(b.uploadDate).getTime() : 0;
+        return dateB - dateA; // Newest first
+      });
+    } else if (sortBy === 'oldest') {
+      filteredItems.sort((a, b) => {
+        const dateA = a.uploadDate ? new Date(a.uploadDate).getTime() : 0;
+        const dateB = b.uploadDate ? new Date(b.uploadDate).getTime() : 0;
+        return dateA - dateB; // Oldest first
+      });
+    } else if (sortBy === 'popular') {
+      filteredItems.sort((a, b) => (b.popularity || 0) - (a.popularity || 0)); // Most popular first
+    } else if (sortBy === 'size') {
+      filteredItems.sort((a, b) => {
+        const sizeA = parseFloat(a.size.replace(/[^0-9.]/g, '')) * (a.size.includes('MB') ? 1000 : 1);
+        const sizeB = parseFloat(b.size.replace(/[^0-9.]/g, '')) * (b.size.includes('MB') ? 1000 : 1);
+        return sizeB - sizeA; // Largest first
+      });
+    }
+  }
+  
   function getContentType(typeId: string) {
     return contentTypes.find(type => type.id === typeId);
   }
@@ -21,6 +53,12 @@
     const date = new Date(timestamp);
     return date.toLocaleString();
   }
+  
+  function formatUploadDate(timestamp: string | undefined) {
+    if (!timestamp) return 'N/A';
+    const date = new Date(timestamp);
+    return date.toLocaleDateString();
+  }
 </script>
 
 <div class="container mx-auto px-4 py-8">
@@ -28,7 +66,23 @@
     <a href="/" class="text-blue-600 hover:underline">← Back to Dashboard</a>
   </div>
   
-  <h1 class="text-2xl font-bold mb-6">Content Library</h1>
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold">Content Library ({contentItems.length} items)</h1>
+    
+    <div class="flex items-center space-x-2">
+      <label for="sortBy" class="text-sm font-medium text-gray-700">Sort by:</label>
+      <select 
+        id="sortBy" 
+        bind:value={sortBy} 
+        class="border border-gray-300 rounded-md px-3 py-1 text-sm"
+      >
+        <option value="newest">Newest</option>
+        <option value="oldest">Oldest</option>
+        <option value="popular">Most Popular</option>
+        <option value="size">Largest Size</option>
+      </select>
+    </div>
+  </div>
   
   <div class="bg-white rounded-lg shadow overflow-hidden">
     <div class="overflow-x-auto">
@@ -41,12 +95,13 @@
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Version</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Popularity</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cache Status</th>
+            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Upload Date</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Updated</th>
             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
-          {#each contentItems as item}
+          {#each filteredItems as item}
             <tr>
               <td class="px-6 py-4 whitespace-nowrap">
                 <div class="font-medium text-gray-900">{item.name}</div>
@@ -74,6 +129,9 @@
                   </div>
                   <span class="text-sm text-gray-500">{item.locations.length}/{edgeLocations.length}</span>
                 </div>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                {formatUploadDate(item.uploadDate || '')}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                 {formatLastUpdated(item.lastUpdated || '')}
