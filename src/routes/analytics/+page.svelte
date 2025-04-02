@@ -559,25 +559,25 @@
 		<div class="bg-white rounded-lg shadow p-6">
 			<p class="text-sm text-gray-500">Total Requests</p>
 			<p class="text-3xl font-bold">{globalMetrics.totalRequests.toLocaleString()}</p>
-			<p class="text-xs text-green-600 mt-1">+12% from last week</p>
+			<p class="text-xs text-green-600 mt-1">+0% from last week</p>
 		</div>
 		
 		<div class="bg-white rounded-lg shadow p-6">
 			<p class="text-sm text-gray-500">Cache Hit Rate</p>
 			<p class="text-3xl font-bold">{globalMetrics.cacheHitRate}%</p>
-			<p class="text-xs text-green-600 mt-1">+5% from last week</p>
+			<p class="text-xs text-green-600 mt-1">+0% from last week</p>
 		</div>
 		
 		<div class="bg-white rounded-lg shadow p-6">
 			<p class="text-sm text-gray-500">Average Latency</p>
 			<p class="text-3xl font-bold">{globalMetrics.avgLatency}ms</p>
-			<p class="text-xs text-green-600 mt-1">-15ms from last week</p>
+			<p class="text-xs text-green-600 mt-1">-0ms from last week</p>
 		</div>
 		
 		<div class="bg-white rounded-lg shadow p-6">
 			<p class="text-sm text-gray-500">Bandwidth Saved</p>
 			<p class="text-3xl font-bold">{globalMetrics.bandwidthSaved} MB</p>
-			<p class="text-xs text-green-600 mt-1">+28% from last week</p>
+			<p class="text-xs text-green-600 mt-1">+0% from last week</p>
 		</div>
 	</div>
 	
