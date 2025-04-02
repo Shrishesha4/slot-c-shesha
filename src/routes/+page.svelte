@@ -30,9 +30,6 @@
 		}
 	}
 
-	function getContentTypeInfo(typeId: string) {
-		return contentTypes.find(type => type.id === typeId);
-	}
 </script>
 
 <div class="container mx-auto px-4 py-8">
